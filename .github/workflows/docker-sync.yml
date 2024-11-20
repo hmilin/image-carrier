@@ -1,0 +1,35 @@
+name: Docker Image Sync
+
+on:
+  push:
+    branches:
+      - main  # 触发工作流的分支
+
+jobs:
+  sync-docker-image:
+    runs-on: ubuntu-latest
+
+    steps:
+    # 1. 检出代码库（如果需要）
+    - name: Checkout repository
+      uses: actions/checkout@v3
+
+    # 2. 登录 Docker Hub
+    - name: Log in to Docker Hub
+      run: echo "${{ secrets.DOCKERHUB_PASSWORD }}" | docker login -u "${{ secrets.DOCKERHUB_USERNAME }}" --password-stdin
+
+    # 3. 拉取镜像
+    - name: Pull Docker Image from Docker Hub
+      run: docker pull codeskyblue/gohttpserver:latest
+
+    # 4. 重新标记镜像为目标仓库路径
+    - name: Retag Docker Image
+      run: docker tag codeskyblue/gohttpserver:latest ${{ secrets.ALIYUN_REGISTRY }}/${{ secrets.ALIYUN_REGISTRY_PROJECT }}/gohttpserver:latest
+
+    # 5. 登录目标镜像仓库
+    - name: Log in to Target Registry
+      run:  docker login -u "${{ secrets.ALIYUN_REGISTRY_USERNAME }}" ${{ secrets.ALIYUN_REGISTRY }}
+
+    # 6. 推送镜像到目标仓库
+    - name: Push Docker Image to Target Registry
+      run: docker push ${{ secrets.ALIYUN_REGISTRY }}/${{ secrets.ALIYUN_REGISTRY_PROJECT }}/gohttpserver:latest
